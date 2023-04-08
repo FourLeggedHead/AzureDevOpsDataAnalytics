@@ -6,6 +6,7 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Extensions.Logging;
+using ADDA.Common;
 
 namespace ADDA.Function
 {
@@ -17,12 +18,13 @@ namespace ADDA.Function
         {
             var outputs = new List<string>();
 
-            // Replace "hello" with the name of your Durable Activity Function.
+            // Orchestrate the activities
             outputs.Add(await context.CallActivityAsync<string>(nameof(SayHello), "Tokyo"));
             outputs.Add(await context.CallActivityAsync<string>(nameof(SayHello), "Seattle"));
             outputs.Add(await context.CallActivityAsync<string>(nameof(SayHello), "London"));
+            outputs.Add(await context.CallActivityAsync<string>(nameof(SayHello),
+                                context.GetInput<AddaDevOpsOrganization>().OrganizationUri.ToString()));
 
-            // returns ["Hello Tokyo!", "Hello Seattle!", "Hello London!"]
             return outputs;
         }
 
