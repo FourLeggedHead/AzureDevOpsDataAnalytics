@@ -267,3 +267,6 @@ __pycache__/
 **/__azurite_db_*
 __blobstorage__
 __queuestorage__
+
+# Visual Studio Code Workspace
+*.code-workspace
