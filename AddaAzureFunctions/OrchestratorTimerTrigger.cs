@@ -19,6 +19,7 @@ namespace ADDA.Function
             // Get the organization URI from the environment variable
             var addaDevOpsOrganization = new AddaDevOpsOrganization();
             addaDevOpsOrganization.GetOrganizationUri();
+            addaDevOpsOrganization.GetCredential();
             log.LogInformation($"OrganizationUri: {addaDevOpsOrganization.OrganizationUri}");
 
             // Start the Azure Function orchestration

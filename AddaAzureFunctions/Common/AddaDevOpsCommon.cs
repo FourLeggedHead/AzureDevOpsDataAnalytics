@@ -1,11 +1,12 @@
 using System;
+using Microsoft.VisualStudio.Services.Common;
 
 namespace ADDA.Common
 {
     public class AddaDevOpsOrganization
     {
         public Uri OrganizationUri { get; set; }
-        public string PersonalAccessToken { get; set; }
+        public VssBasicCredential Credential { get; set; }
 
         public static string GetEnvironmentVariable(string name)
         {
@@ -21,6 +22,17 @@ namespace ADDA.Common
                 throw new ArgumentNullException($"{environmentVariable} is null or empty");
             }
             OrganizationUri = new Uri(organizationUri);
+        }
+
+        public void GetCredential()
+        {
+            var environmentVariable = "AzureDevOpsPersonalAccessToken";
+            var accessToken = GetEnvironmentVariable(environmentVariable);
+            if (string.IsNullOrEmpty(accessToken))
+            {
+                throw new ArgumentNullException($"{environmentVariable} is null or empty");
+            }
+            Credential = new VssBasicCredential(string.Empty, accessToken);
         }
     }
 }

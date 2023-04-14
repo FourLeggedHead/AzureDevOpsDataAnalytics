@@ -24,6 +24,8 @@ namespace ADDA.Function
             outputs.Add(await context.CallActivityAsync<string>(nameof(SayHello), "London"));
             outputs.Add(await context.CallActivityAsync<string>(nameof(SayHello),
                                 context.GetInput<AddaDevOpsOrganization>().OrganizationUri.ToString()));
+            outputs.Add(await context.CallActivityAsync<string>(nameof(SayHello),
+                                context.GetInput<AddaDevOpsOrganization>().Credential.CredentialType.ToString()));
 
             return outputs;
         }
