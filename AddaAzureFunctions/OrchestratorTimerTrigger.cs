@@ -2,11 +2,10 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
-using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Extensions.Logging;
 using ADDA.Common;
 
-namespace ADDA.Function
+namespace ADDA.Functions
 {
     public class OrchestratorTimerTrigger
     {
