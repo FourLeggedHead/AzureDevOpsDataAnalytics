@@ -6,7 +6,6 @@ namespace ADDA.Common
     public class AddaDevOpsOrganization
     {
         public Uri OrganizationUri { get; set; }
-        public VssBasicCredential Credential { get; set; }
 
         public static string GetEnvironmentVariable(string name)
         {
@@ -24,7 +23,7 @@ namespace ADDA.Common
             OrganizationUri = new Uri(organizationUri);
         }
 
-        public void GetCredential()
+        public VssBasicCredential GetCredential()
         {
             var environmentVariable = "AzureDevOpsPersonalAccessToken";
             var accessToken = GetEnvironmentVariable(environmentVariable);
@@ -32,7 +31,7 @@ namespace ADDA.Common
             {
                 throw new ArgumentNullException($"{environmentVariable} is null or empty");
             }
-            Credential = new VssBasicCredential(string.Empty, accessToken);
+            return new VssBasicCredential(string.Empty, accessToken);
         }
     }
 }
