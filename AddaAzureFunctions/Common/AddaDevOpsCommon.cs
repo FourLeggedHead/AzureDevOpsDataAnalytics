@@ -3,7 +3,14 @@ using Microsoft.VisualStudio.Services.Common;
 
 namespace ADDA.Common
 {
-    public class AddaDevOpsOrganization
+    public interface IAddaDevOpsOrganization
+    {
+        Uri OrganizationUri { get; set; }
+        public void GetOrganizationUri();
+        public VssBasicCredential GetCredential();
+    }
+
+    public class AddaDevOpsOrganization : IAddaDevOpsOrganization
     {
         public Uri OrganizationUri { get; set; }
 

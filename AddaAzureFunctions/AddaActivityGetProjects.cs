@@ -11,13 +11,13 @@ namespace ADDA.Functions
     public static class AddaActivityGetProjects
     {
         [FunctionName(nameof(GetAzdoProjects))]
-        public static IPagedList<TeamProjectReference> GetAzdoProjects([ActivityTrigger] AddaDevOpsOrganization organization, ILogger log)
+        public static IPagedList<TeamProjectReference> GetAzdoProjects([ActivityTrigger] IAddaDevOpsOrganization organization, ILogger log)
         {
             log.LogInformation($"Getting projects for {organization.OrganizationUri.ToString()}.");
             return GetProjects(organization);
         }
 
-        public static IPagedList<TeamProjectReference> GetProjects(AddaDevOpsOrganization organization)
+        public static IPagedList<TeamProjectReference> GetProjects(IAddaDevOpsOrganization organization)
         {
             try
             {

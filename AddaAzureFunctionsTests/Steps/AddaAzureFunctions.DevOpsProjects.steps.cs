@@ -10,26 +10,26 @@ public class AddaAzureFunctionsDevOpsProjectsSteps
     {
         _scenarioContext = scenarioContext;
         _featureContext = featureContext;
-        _featureContext.Set(new AddaDevOpsOrganization());
-        _featureContext.Get<AddaDevOpsOrganization>().GetOrganizationUri();
+        _featureContext["DevOpsOrganization"] = new AddaDevOpsOrganization();
+        ((AddaDevOpsOrganization)_featureContext["DevOpsOrganization"]).GetOrganizationUri();
     }
 
     [Given(@"the Azure DevOps organization is (.*)")]
     public void GivenTheAzureDevOpsOrganizationIs(string organization)
     {
-        StringAssert.Contains(_featureContext.Get<AddaDevOpsOrganization>().OrganizationUri.ToString(), organization);
+        StringAssert.Contains(((AddaDevOpsOrganization)_featureContext["DevOpsOrganization"]).OrganizationUri.ToString(), organization);
     }
 
     [When(@"I get the projects")]
     public void WhenGettingTheProjects()
     {
         var projects = AddaActivityGetProjects.GetProjects(_featureContext.Get<AddaDevOpsOrganization>());
-        _scenarioContext.Set(projects);
+        _scenarioContext["DevOpsProjects"] = projects;
     }
 
     [Then(@"the count of projects is at least (.*)")]
     public void ThenTheCountOfProjectsIsAtLeast(int count)
     {
-        Assert.IsTrue(_scenarioContext.Get<IPagedList<TeamProjectReference>>().Count() >= count);
+        Assert.IsTrue(((IPagedList<TeamProjectReference>)_scenarioContext["DevOpsProjects"]).Count() >= count);
     }
 }
