@@ -65,7 +65,7 @@ namespace ADDA.Functions
         }
 
         // Add or update the list of DevOps projects in the Azure table
-        private static (int added, int updated) AddUpdateProjectsToTable(TableClient tableClient, IPagedList<TeamProjectReference> projects)
+        public static (int added, int updated) AddUpdateProjectsToTable(TableClient tableClient, IPagedList<TeamProjectReference> projects)
         {
             (int added, int updated) projectsCounts = (0, 0);
 
@@ -103,7 +103,7 @@ namespace ADDA.Functions
         }
 
         // Delete (soft) projects from the table when they no longer exist in DevOps and unselect them
-        private static int SoftDeleteProjectsFromTable(TableClient tableClient, IPagedList<TeamProjectReference> projects)
+        public static int SoftDeleteProjectsFromTable(TableClient tableClient, IPagedList<TeamProjectReference> projects)
         {
             var projectEntityRowKeys = tableClient.Query<DevOpsProject>(
                                                 e => e.PartitionKey == DevOpsProjectPartitionKey, 20, new[] { "RowKey" });

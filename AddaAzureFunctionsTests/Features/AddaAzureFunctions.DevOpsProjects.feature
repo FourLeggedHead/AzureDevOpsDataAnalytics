@@ -9,7 +9,23 @@ Feature: Azure DevOps Project
         Then the count of projects is at least 1
 
     Scenario: Record DevOps projects in an Azure Table
-        Given a list of Azure DevOps projects
+        Given a list of 4 Azure DevOps projects
         And an empty Azure table
         When the projects are recorded in the Azure table
-        Then the count of entities in the Azure table is greater than zero
+        Then the count of pojects added in the Azure table is 4
+        And the count of projects updated in the Azure table is 0
+
+    Scenario: Add new projects to the Azure Table
+        Given a list of 4 Azure DevOps projects
+        And an Azure table containing 2 of the projects
+        When the projects are recorded in the Azure table
+        Then the count of pojects added in the Azure table is 2
+        And the count of projects updated in the Azure table is 0
+
+    Scenario: Update existing projects in the Azure Table
+        Given a list of 4 Azure DevOps projects
+        And an Azure table containing 4 of the projects
+        And one of the 4 projects changed name
+        When the projects are recorded in the Azure table
+        Then the count of pojects added in the Azure table is 0
+        And the count of projects updated in the Azure table is 1
