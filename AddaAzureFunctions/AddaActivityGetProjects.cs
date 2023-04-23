@@ -13,8 +13,6 @@ namespace ADDA.Functions
 {
     public static class AddaActivityGetProjects
     {
-        private const string DevOpsProjectPartitionKey = "AzureDevOpsProject";
-
         [FunctionName(nameof(GetAzdoProjects))]
         [StorageAccount("DevOpsDataStorageAppSetting")]
         public static IPagedList<TeamProjectReference> GetAzdoProjects([ActivityTrigger] IAddaDevOpsOrganization organization,
@@ -71,7 +69,7 @@ namespace ADDA.Functions
 
             foreach (var project in projects)
             {
-                var response = tableClient.GetEntityIfExists<DevOpsProject>(DevOpsProjectPartitionKey, project.Id.ToString());
+                var response = tableClient.GetEntityIfExists<DevOpsProject>(DevOpsProject.DevOpsProjectPartitionKey, project.Id.ToString());
 
                 if (!response.HasValue)
                 {
@@ -80,7 +78,7 @@ namespace ADDA.Functions
                         Name = project.Name,
                         Selected = false,
                         Deleted = false,
-                        PartitionKey = DevOpsProjectPartitionKey,
+                        PartitionKey = DevOpsProject.DevOpsProjectPartitionKey,
                         RowKey = project.Id.ToString()
                     };
                     var addedResponse = tableClient.AddEntity<DevOpsProject>(entity);
@@ -106,7 +104,7 @@ namespace ADDA.Functions
         public static int SoftDeleteProjectsFromTable(TableClient tableClient, IPagedList<TeamProjectReference> projects)
         {
             var projectEntityRowKeys = tableClient.Query<DevOpsProject>(
-                                                e => e.PartitionKey == DevOpsProjectPartitionKey, 20, new[] { "RowKey" });
+                                                e => e.PartitionKey == DevOpsProject.DevOpsProjectPartitionKey, 20, new[] { "RowKey" });
 
             var deletedProjectsCount = 0;
 
@@ -114,7 +112,7 @@ namespace ADDA.Functions
             {
                 if (!projects.Any(p => p.Id.ToString() == projectEntityRowKey.RowKey))
                 {
-                    var projectEntity = tableClient.GetEntity<DevOpsProject>(DevOpsProjectPartitionKey, projectEntityRowKey.RowKey);
+                    var projectEntity = tableClient.GetEntity<DevOpsProject>(DevOpsProject.DevOpsProjectPartitionKey, projectEntityRowKey.RowKey);
 
                     projectEntity.Value.Deleted = true;
                     projectEntity.Value.Selected = false;

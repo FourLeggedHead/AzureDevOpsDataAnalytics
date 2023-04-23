@@ -1,6 +1,7 @@
 using System;
 using Azure;
 using Azure.Data.Tables;
+using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 
 namespace ADDA.Common
@@ -47,6 +48,8 @@ namespace ADDA.Common
     // Class to hold project info
     public class DevOpsProject : ITableEntity
     {
+        public const string DevOpsProjectPartitionKey = "AzureDevOpsProject";
+
         public string Name { get; set; }
         public bool Selected { get; set; } = default;
         public bool Deleted { get; set; } = default;
@@ -54,5 +57,17 @@ namespace ADDA.Common
         public string PartitionKey { get; set; }
         public string RowKey { get; set; }
         public ETag ETag { get; set; }
-    }
+
+        public DevOpsProject()
+        {
+
+        }
+
+        public DevOpsProject(TeamProjectReference project)
+        {
+            Name = project.Name;
+            PartitionKey = DevOpsProjectPartitionKey;
+            RowKey = project.Id.ToString();
+        }
+}
 }

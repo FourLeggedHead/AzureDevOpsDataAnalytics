@@ -21,7 +21,7 @@ public class AddaAzureFunctionsDevOpsProjectsSteps
 
         _featureContext = featureContext;
         _featureContext.Set(addaDevOpsOrganization, DevOpsOrganization);
-        
+
         _scenarioContext = scenarioContext;
     }
 
@@ -30,23 +30,23 @@ public class AddaAzureFunctionsDevOpsProjectsSteps
     [Given(@"the Azure DevOps organization is (.*)")]
     public void GivenTheAzureDevOpsOrganizationIs(string organization)
     {
-        var addaDevOpsOrganization = _featureContext.Get<AddaDevOpsOrganization>();
+        var addaDevOpsOrganization = _featureContext.Get<AddaDevOpsOrganization>(DevOpsOrganization);
         StringAssert.Contains(addaDevOpsOrganization.OrganizationUri.ToString(), organization);
     }
 
     [Given(@"a list of (.*) Azure DevOps projects")]
     public void GivenListAzureDevOpsProjects(int numberOfProjects)
     {
-        var projects = new PagedList<TeamProjectReference>();
+        var mockedProjectList = new PagedList<TeamProjectReference>();
         for (int i = 0; i < numberOfProjects; i++)
         {
-            projects.Add(new TeamProjectReference()
+            mockedProjectList.Add(new TeamProjectReference()
             {
                 Id = Guid.NewGuid(),
                 Name = $"Project {i}"
             });
         }
-        _scenarioContext.Set<PagedList<TeamProjectReference>>(projects, MockedDevOpsProjects);
+        _scenarioContext.Set<PagedList<TeamProjectReference>>(mockedProjectList, MockedDevOpsProjects);
     }
 
     [Given(@"an empty Azure table")]
@@ -61,6 +61,47 @@ public class AddaAzureFunctionsDevOpsProjectsSteps
         mockNullableResponse.SetupGet(r => r.HasValue).Returns(false);
         mockedTableClient.Setup(t => t.GetEntityIfExists<DevOpsProject>(It.IsAny<string>(), It.IsAny<string>(), default, default))
             .Returns(mockNullableResponse.Object);
+
+        // We assume AddEntity works properly and retunns no error
+        var mockResponse = new Mock<Azure.Response>();
+        mockResponse.SetupGet(r => r.IsError).Returns(false);
+
+        mockedTableClient.Setup(t => t.AddEntity<DevOpsProject>(It.IsAny<DevOpsProject>(), default))
+            .Returns(mockResponse.Object);
+        _scenarioContext.Set<Mock<TableClient>>(mockedTableClient, MockedProjectsTableClient);
+    }
+
+    [Given(@"an Azure table containing (.*) of the projects")]
+    public void AnAzureTableContainingProjects(int numberOfProjects)
+    {
+        // Create a mock table client to simulate the table.
+        var mockedTableClient = new Mock<TableClient>();
+        mockedTableClient.SetupGet(t => t.Name).Returns(MockedDevOpsProjectsTable);
+
+        // Get the list of DevOps projects from the scenario context
+        var mockedProjectList = _scenarioContext.Get<PagedList<TeamProjectReference>>(MockedDevOpsProjects);
+
+        // Setup GetEntityIfExists to mock the first "mockedProjectList.Count - numberOfProjects" are in the mocked table
+        // Response must have a value, as an instance of DevOpsProject  
+        var mockNullableResponseTrue = new Mock<Azure.NullableResponse<DevOpsProject>>();
+        mockNullableResponseTrue.SetupGet(r => r.HasValue).Returns(true);
+        mockNullableResponseTrue.SetupGet(r => r.Value)
+            .Returns(new Queue<DevOpsProject>(mockedProjectList.Take(mockedProjectList.Count - numberOfProjects)
+                                                                .Select(p => new DevOpsProject(p))).Dequeue);
+
+        var inMockedProjects = mockedProjectList.Take(mockedProjectList.Count - numberOfProjects).Select(p => p.Id.ToString());
+        mockedTableClient.Setup(t => t.GetEntityIfExists<DevOpsProject>(DevOpsProject.DevOpsProjectPartitionKey,
+                                        It.IsIn(inMockedProjects), default, default))
+                            .Returns(mockNullableResponseTrue.Object);
+
+        // Seting up GetEntityIfExists to mock the last "numberOfProjects" are not in the mocked table
+        var mockNullableResponseFalse = new Mock<Azure.NullableResponse<DevOpsProject>>();
+        mockNullableResponseFalse.SetupGet(r => r.HasValue).Returns(false);
+
+        var notInMockedProjects = mockedProjectList.TakeLast(numberOfProjects).Select(p => p.Id.ToString());
+        mockedTableClient.Setup(t => t.GetEntityIfExists<DevOpsProject>(DevOpsProject.DevOpsProjectPartitionKey,
+                                        It.IsIn(notInMockedProjects), default, default))
+                            .Returns(mockNullableResponseFalse.Object);
 
         // We assume AddEntity works properly and retunns no error
         var mockResponse = new Mock<Azure.Response>();
