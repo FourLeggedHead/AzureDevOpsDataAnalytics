@@ -23,6 +23,9 @@ namespace ADDA.Functions
                                 context.GetInput<AddaDevOpsOrganization>());
             outputs.AddRange(projects.Select(project => project.Name));
 
+            await context.CallActivityAsync<PagedList<TeamProjectReference>>(nameof(AddaActivityGetWorkItems.GetAzdoWorkItems),
+                                context.GetInput<AddaDevOpsOrganization>());
+
             return outputs;
         }
     }

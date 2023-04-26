@@ -58,10 +58,7 @@ namespace ADDA.Common
         public string RowKey { get; set; }
         public ETag ETag { get; set; }
 
-        public DevOpsProject()
-        {
-
-        }
+        public DevOpsProject() { }
 
         public DevOpsProject(TeamProjectReference project)
         {
@@ -69,5 +66,5 @@ namespace ADDA.Common
             PartitionKey = DevOpsProjectPartitionKey;
             RowKey = project.Id.ToString();
         }
-}
+    }
 }
