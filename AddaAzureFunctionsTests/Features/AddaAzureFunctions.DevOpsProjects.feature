@@ -29,3 +29,40 @@ Feature: Azure DevOps Project
         When the projects are recorded in the Azure table
         Then the count of pojects added in the Azure table is 0
         And the count of projects updated in the Azure table is 1
+
+    Scenario: Verify a given project has the expected Iteration node
+        Given I have a project with the name FirstProject
+        And the project has FirstProject\2023\Q1 as one of its Iteration Pathes
+        When I get the Iteration nodes for the project
+        Then the project has the expected Iteration node 2023
+
+    Scenario: Verify a given project has the expected count of iteration paths
+        Given I have a project with the name FirstProject
+        And the project has the following Iteration nodes:
+            | Node Name | Children Names                     |
+            | 2023      | Q1, Q2, Q3, Q4                     |
+            | Q1        | Sprint 1.1, Sprint 1.2, Sprint 1.3 |
+            | Q2        | Sprint 2.1, Sprint 2.2, Sprint 2.3 |
+        When I get all the Iteration paths for the project
+        Then the project has 12 Iteration paths
+
+    Scenario: Find all the iteration paths ending with a node of a given name
+        Given I have a project with the name FirstProject
+        And the project has the following Iteration nodes:
+            | Node Name | Children Names |
+            | 2023      | Q1, Q2, Q3, Q4 |
+            | 2022      | Q1, Q2, Q3, Q4 |
+            | 2021      | Q1, Q2, Q3, Q4 |
+        When I get all the Iteration paths that ends with a node named Q1
+        Then the project has 3 Iteration paths
+
+    Scenario: Verify a given project has the expected node name
+        Given I have a project with the name FirstProject
+        And the project has the following Iteration nodes:
+            | Node Name | Children Names                     |
+            | Team 1    | 2021, 2022, 2023                   |
+            | 2023      | Q1, Q2, Q3, Q4                     |
+            | Q1        | Sprint 1.1, Sprint 1.2, Sprint 1.3 |
+            | Q2        | Sprint 2.1, Sprint 2.2, Sprint 2.3 |
+        When I check one of the nodes is named 2023
+        Then the response is true
