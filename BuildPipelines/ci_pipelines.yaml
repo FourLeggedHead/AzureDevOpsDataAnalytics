@@ -1,0 +1,54 @@
+# The purpose of this pipeline is to ensure all tests are run and pass
+# when merging to the 'development' branch
+name: ADDA_CI_$(Year:yyyy).$(Month).$(DayOfMonth)$(Rev:.r)
+
+# Triggers on merge to "development" branch
+trigger:
+  branches:
+    include:
+    - development
+
+# Build agent pool
+pool:
+  name: 'Azure Pipelines'
+  vmImage: 'ubuntu-latest'
+
+# Variables
+variables:
+  - group: AddaVariables
+  - name: solution
+    value: '**/*.sln'
+  - name: buildPlatform
+    value: 'Any CPU'
+  - name: buildConfiguration
+    value: 'Release'
+
+steps:
+  # Build steps
+  - task: DotNetCoreCLI@2
+    displayName: 'Build Azure Functions solution'
+    inputs:
+      command: 'build'
+      projects: '**/*.sln'
+      arguments: '--configuration $(buildConfiguration)'
+
+  # Run tests
+  - task: DotNetCoreCLI@2
+    displayName: 'Run tests'
+    inputs:
+      command: 'test'
+      projects: '**/*Tests/*.csproj'
+      arguments: '--configuration $(buildConfiguration)'
+      publishTestResults: true
+    env:
+      AzureDevOpsAccessToken: $(AzureDevOpsAccessToken)
+      AzureDevOpsOrganizationUri: $(AzureDevOpsOrganizationUri)
+
+  # Publish Cucumber living documentation
+  - task: SpecFlowPlus@0
+    displayName: 'living doc'
+    inputs:
+      generatorSource: 'FeatureFolder'
+      projectFilePath: 'AzureFunctionsTests'
+      projectName: 'ADDA'
+      projectLanguage: 'en'
