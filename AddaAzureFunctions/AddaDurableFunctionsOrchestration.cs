@@ -13,20 +13,14 @@ namespace ADDA.Functions
     public static class AddaDurableFunctionsOrchestration
     {
         [FunctionName("AddaDurableFunctionsOrchestration")]
-        public static async Task<List<string>> RunOrchestrator(
+        public static async Task RunOrchestrator(
             [OrchestrationTrigger] IDurableOrchestrationContext context)
         {
-            var outputs = new List<string>();
-
             // Orchestrate the activities
-            var projects = await context.CallActivityAsync<PagedList<TeamProjectReference>>(nameof(AddaActivityGetProjects.GetAzdoProjects),
-                                context.GetInput<AddaDevOpsOrganization>());
-            outputs.AddRange(projects.Select(project => project.Name));
+            var successAzdo = await context.CallActivityAsync<bool>(nameof(AddaActivityGetAzureDevOpsProjects.GetAzdoProjects), null);
+            await context.CallActivityAsync<PagedList<TeamProjectReference>>(nameof(AddaActivityGetAzureDevOpsWorkItems.GetAzdoWorkItems), successAzdo);
 
-            await context.CallActivityAsync<PagedList<TeamProjectReference>>(nameof(AddaActivityGetWorkItems.GetAzdoWorkItems),
-                                context.GetInput<AddaDevOpsOrganization>());
-
-            return outputs;
+            var successJira = await context.CallActivityAsync<bool>(nameof(AddaActivityGetJiraProjects.GetJiraProjects), null);
         }
     }
 }

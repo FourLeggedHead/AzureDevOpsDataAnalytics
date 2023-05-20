@@ -17,15 +17,9 @@ namespace ADDA.Functions
             log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
 
             try
-            {
-                // Get the organization URI from the environment variable
-                var addaDevOpsOrganization = new AddaDevOpsOrganization();
-                addaDevOpsOrganization.GetOrganizationUri();
-                log.LogInformation($"OrganizationUri: {addaDevOpsOrganization.OrganizationUri}");
-    
+            { 
                 // Start the Azure Function orchestration
-                string instanceId = await starter.StartNewAsync(
-                                "AddaDurableFunctionsOrchestration", addaDevOpsOrganization);
+                string instanceId = await starter.StartNewAsync("AddaDurableFunctionsOrchestration", null);
     
                 log.LogInformation($"Started orchestration with ID = '{instanceId}'.");
 

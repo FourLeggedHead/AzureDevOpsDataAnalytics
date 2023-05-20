@@ -23,7 +23,7 @@ public class AddaAzureFunctionsDevOpsProjectsSteps
     {
         // Create a DevOpsProjectCollection object and get the project collection URI
         var addaDevOpsOrganization = new AddaDevOpsOrganization();
-        addaDevOpsOrganization.GetOrganizationUri();
+        addaDevOpsOrganization.GetUri();
 
         _featureContext = featureContext;
         _featureContext.Set(addaDevOpsOrganization, DevOpsOrganization);
@@ -37,7 +37,7 @@ public class AddaAzureFunctionsDevOpsProjectsSteps
     public void GivenTheAzureDevOpsOrganizationIs(string organization)
     {
         var addaDevOpsOrganization = _featureContext.Get<AddaDevOpsOrganization>(DevOpsOrganization);
-        StringAssert.Contains(addaDevOpsOrganization.OrganizationUri.ToString(), organization);
+        StringAssert.Contains(addaDevOpsOrganization.Uri.ToString(), organization);
     }
 
     [Given(@"a list of (.*) Azure DevOps projects")]
@@ -194,7 +194,7 @@ public class AddaAzureFunctionsDevOpsProjectsSteps
     public void WhenGettingTheProjects()
     {
         var addaDevOpsOrganization = _featureContext.Get<AddaDevOpsOrganization>(DevOpsOrganization);
-        var projects = AddaActivityGetProjects.GetProjectsFromDevOps(addaDevOpsOrganization);
+        var projects = AddaActivityGetAzureDevOpsProjects.GetProjectsFromDevOps(addaDevOpsOrganization);
         _scenarioContext.Set(projects, AzureDevOpsProjectList);
     }
 
@@ -204,7 +204,7 @@ public class AddaAzureFunctionsDevOpsProjectsSteps
         var mockedTableClient = _scenarioContext.Get<Mock<TableClient>>(MockedProjectsTableClient);
         var mockedProjectList = _scenarioContext.Get<PagedList<TeamProjectReference>>(MockedDevOpsProjects);
 
-        var projectsCounts = AddaActivityGetProjects.AddUpdateProjectsToTable(mockedTableClient.Object, mockedProjectList);
+        var projectsCounts = AddaActivityGetAzureDevOpsProjects.AddUpdateProjectsToTable(mockedTableClient.Object, mockedProjectList);
         _scenarioContext.Set<(int added, int updated)>(projectsCounts, DevOpsProjectsCounts);
     }
 
@@ -216,7 +216,7 @@ public class AddaAzureFunctionsDevOpsProjectsSteps
                                     default, It.IsAny<int>(), default, default))
                         .ReturnsAsync(_scenarioContext.Get<WorkItemClassificationNode>(ProjectRootNode));
 
-        var projectIterationNodes = await AddaActivityGetProjects
+        var projectIterationNodes = await AddaActivityGetAzureDevOpsProjects
                                     .ListAllIterationNodesForProject(workItemsClientMoq.Object, new Guid(), 5);
 
         _scenarioContext.Set<IEnumerable<WorkItemClassificationNode>>(projectIterationNodes, ProjectNodes);
@@ -230,7 +230,7 @@ public class AddaAzureFunctionsDevOpsProjectsSteps
                                     default, It.IsAny<int>(), default, default))
                         .ReturnsAsync(_scenarioContext.Get<WorkItemClassificationNode>(ProjectRootNode));
 
-        var projectIterationPathes = await AddaActivityGetProjects
+        var projectIterationPathes = await AddaActivityGetAzureDevOpsProjects
                                     .GetAllIterationPathsForProject(workItemsClientMoq.Object, new Guid(), 5);
 
         _scenarioContext.Set<IEnumerable<IEnumerable<string>>>(projectIterationPathes, ProjectIterationPaths);
@@ -244,7 +244,7 @@ public class AddaAzureFunctionsDevOpsProjectsSteps
                                     default, It.IsAny<int>(), default, default))
                         .ReturnsAsync(_scenarioContext.Get<WorkItemClassificationNode>(ProjectRootNode));
 
-        var projectIterationPathes = await AddaActivityGetProjects
+        var projectIterationPathes = await AddaActivityGetAzureDevOpsProjects
                                     .GetAllIterationPathsForProjectEndingWithNode(workItemsClientMoq.Object, new Guid(), nodeName, 5);
 
         _scenarioContext.Set<IEnumerable<IEnumerable<string>>>(projectIterationPathes, ProjectIterationPaths);
@@ -258,7 +258,7 @@ public class AddaAzureFunctionsDevOpsProjectsSteps
                                     default, It.IsAny<int>(), default, default))
                         .ReturnsAsync(_scenarioContext.Get<WorkItemClassificationNode>(ProjectRootNode));
 
-        var hasNode = await AddaActivityGetProjects
+        var hasNode = await AddaActivityGetAzureDevOpsProjects
                         .ProjectHasIterationNode(workItemsClientMoq.Object, new Guid(), nodeName, 5);
 
         _scenarioContext.Set<bool>(hasNode, Response);

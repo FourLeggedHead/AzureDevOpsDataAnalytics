@@ -7,6 +7,7 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Services.WebApi;
+using Microsoft.VisualStudio.Services.Common;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
@@ -15,54 +16,71 @@ using ADDA.Common;
 
 namespace ADDA.Functions
 {
-    public static class AddaActivityGetProjects
+    public static class AddaActivityGetAzureDevOpsProjects
     {
         [FunctionName(nameof(GetAzdoProjects))]
         [StorageAccount("DevOpsDataStorageAppSetting")]
-        public static IPagedList<TeamProjectReference> GetAzdoProjects([ActivityTrigger] IAddaDevOpsOrganization organization,
-                                                                        [Table("DevOpsProjectsData")] TableClient tableClient,
-                                                                        ILogger log)
+        public static bool GetAzdoProjects([ActivityTrigger] object trigger,
+                                            [Table("DevOpsProjectsData")] TableClient tableClient,
+                                            ILogger log)
         {
-            log.LogInformation($"Getting projects for {organization.OrganizationUri.ToString()}.");
+            log.LogInformation($"ADDA Activity trigger function {nameof(GetAzdoProjects)} executed at: {DateTime.Now}");
 
+            // Initialize the project collection and get the uri
+            var organization = new AddaDevOpsOrganization();
             try
             {
-                var projects = GetProjectsFromDevOps(organization);
-                log.LogInformation($"{projects.Count} projects in the {organization.OrganizationUri.AbsoluteUri} organization.");
-
-                var projectsCounts = AddUpdateProjectsToTable(tableClient, projects);
-                log.LogInformation($"{projectsCounts.added} {(projectsCounts.added > 1 ? "projects" : "project")} were added.");
-                log.LogInformation($"{projectsCounts.updated} {(projectsCounts.updated > 1 ? "projects" : "project")} were updated.");
-
-                var deletedProjectCount = SoftDeleteProjectsFromTable(tableClient, projects);
-                log.LogInformation($"{deletedProjectCount} {(deletedProjectCount > 1 ? "projects" : "project")} were deleted.");
-
-                return projects;
+                organization.GetUri();
             }
             catch (Exception ex)
             {
                 log.LogInformation(ex.Message);
                 log.LogInformation(ex.InnerException.ToString());
 
-                return null;
+                return false;
+            }
+
+            log.LogInformation($"Getting projects for {organization.Uri.ToString()}.");
+
+            try
+            {
+                // Get the list of projects from DevOps
+                var projects = GetProjectsFromDevOps(organization).Result;
+                log.LogInformation($"{projects.Count} projects in the {organization.Uri.AbsoluteUri} organization.");
+
+                // Add or update the list of DevOps projects in the Azure table
+                var projectsCounts = AddUpdateProjectsToTable(tableClient, projects);
+                log.LogInformation($"{projectsCounts.added} {(projectsCounts.added > 1 ? "projects" : "project")} were added.");
+                log.LogInformation($"{projectsCounts.updated} {(projectsCounts.updated > 1 ? "projects" : "project")} were updated.");
+
+                // Delete (soft) projects from the table when they no longer exist in DevOps and unselect them
+                var deletedProjectCount = SoftDeleteProjectsFromTable(tableClient, projects);
+                log.LogInformation($"{deletedProjectCount} {(deletedProjectCount > 1 ? "projects" : "project")} were deleted.");
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                log.LogInformation(ex.Message);
+                log.LogInformation(ex.InnerException.ToString());
+
+                return false;
             }
         }
 
         // List all of the Azure DevOps projects of the organization
-        public static IPagedList<TeamProjectReference> GetProjectsFromDevOps(IAddaDevOpsOrganization organization)
+        public static async Task<IPagedList<TeamProjectReference>> GetProjectsFromDevOps(IProjectCollection<VssBasicCredential> organization)
         {
             try
             {
-                var credential = organization.GetCredential();
-
-                using (var projectClient = new ProjectHttpClient(organization.OrganizationUri, credential))
+                using (var projectClient = new ProjectHttpClient(organization.Uri, await organization.GetCredential()))
                 {
                     return projectClient.GetProjects().Result;
                 }
             }
             catch (System.Exception ex)
             {
-                throw new Exception($"Could not get projects for {organization.OrganizationUri.ToString()}.", ex);
+                throw new Exception($"Could not get projects for {organization.Uri.ToString()}.", ex);
             }
         }
 

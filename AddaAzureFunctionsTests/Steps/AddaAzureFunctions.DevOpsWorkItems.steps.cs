@@ -60,7 +60,7 @@ namespace ADDA.Functions.Tests
             workItemsClientMoq.Setup(w => w.QueryByWiqlAsync(It.IsAny<Wiql>(), default, default, default, default))
                                 .ReturnsAsync(result);
 
-            var workItemIdsList = AddaActivityGetWorkItems.QueryWorkItemsIds(workItemsClientMoq.Object, new Wiql()).Result;
+            var workItemIdsList = AddaActivityGetAzureDevOpsWorkItems.QueryWorkItemsIds(workItemsClientMoq.Object, new Wiql()).Result;
 
             _scenarioContext.Set<List<int>>(workItemIdsList, WorkItemIdsList);
         }
@@ -80,7 +80,7 @@ namespace ADDA.Functions.Tests
         public void ThenAnExceptionIsThrownQueryingDoneTasksIds()
         {
             var workItemsClientMoq = new Mock<WorkItemTrackingHttpClient>(null, null);
-            Assert.ThrowsException<AggregateException>(() => AddaActivityGetWorkItems.QueryWorkItemsIds(workItemsClientMoq.Object, new Wiql()).Result);
+            Assert.ThrowsException<AggregateException>(() => AddaActivityGetAzureDevOpsWorkItems.QueryWorkItemsIds(workItemsClientMoq.Object, new Wiql()).Result);
         }
 
         #endregion

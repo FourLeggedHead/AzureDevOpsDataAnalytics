@@ -16,7 +16,7 @@ using Microsoft.VisualStudio.Services.Common;
 namespace ADDA.Functions
 {
 
-    public static class AddaActivityGetWorkItems
+    public static class AddaActivityGetAzureDevOpsWorkItems
     {
         private static string[] WorkItemFields = new string[]
         {
@@ -33,14 +33,35 @@ namespace ADDA.Functions
 
         [FunctionName(nameof(GetAzdoWorkItems))]
         [StorageAccount("DevOpsDataStorageAppSetting")]
-        public static async Task GetAzdoWorkItems([ActivityTrigger] IAddaDevOpsOrganization organization,
+        public static async Task GetAzdoWorkItems([ActivityTrigger] bool success,
                             [Table("DevOpsProjects")] TableClient tableClient,
                             [Blob("bronze/tasks/tasks_{sys.utcnow}.json", FileAccess.Write)] Stream tasksData,
                             [Blob("bronze/pbis/pbis_{sys.utcnow}.json", FileAccess.Write)] Stream pbisData,
                             [Blob("bronze/features/features_{sys.utcnow}.json", FileAccess.Write)] Stream featuresData,
                             [Blob("bronze/epics/epics_{sys.utcnow}.json", FileAccess.Write)] Stream epicsData, ILogger log)
         {
-            log.LogInformation($"Getting the list of work items for project collection {organization.OrganizationUri}.");
+            log.LogInformation($"BACT Activity trigger function executed at: {DateTime.Now}");
+
+            // Terminates the function if the previous activity failed
+            if (!success)
+            {
+                log.LogInformation($"Update of DevOps projects list failed.");
+                return;
+            }
+
+            // Initialize the project collection and get the uri
+            var organization = new AddaDevOpsOrganization();
+            try
+            {
+                organization.GetUri();
+            }
+            catch (Exception ex)
+            {
+                log.LogInformation(ex.Message);
+                log.LogInformation(ex.InnerException.ToString());
+            }
+
+            log.LogInformation($"Getting the list of work items for project collection {organization.Uri}.");
 
             // List the DevOps projects selected to get the work items from
             var selectedProjects = tableClient.Query<DevOpsProject>(
@@ -50,20 +71,19 @@ namespace ADDA.Functions
             // Terminates the function if no project is selected
             if (selectedProjects.Count == 0)
             {
-                log.LogInformation($"No project selected for {organization.OrganizationUri}.");
+                log.LogInformation($"No project selected for {organization.Uri}.");
                 return;
             }
 
             log.LogInformation($"Selected projects: {string.Join(", ", selectedProjects.Select(p => p.Name))}.");
 
-            var credential = organization.GetCredential();
-            using var workItemsClient = new WorkItemTrackingHttpClient(organization.OrganizationUri, credential);
+            using var workItemsClient = new WorkItemTrackingHttpClient(organization.Uri, await organization.GetCredential());
 
             // Get done tasks from selected projects
             var iterationNode = "2023";
 
             log.LogInformation($"Fetch done tasks in selected projects, under iteration node(s) {iterationNode}.");
-            var doneTasks = await GetDoneTasks(workItemsClient, organization, selectedProjects, iterationNode, log);
+            var doneTasks = await GetDoneTasks(workItemsClient, selectedProjects, iterationNode, log);
             log.LogInformation($"Listed {doneTasks.Count()} done Tasks.");
             await JsonSerializer.SerializeAsync(tasksData, doneTasks);
             log.LogInformation("Stored done tasks in Azure as json.");
@@ -89,7 +109,7 @@ namespace ADDA.Functions
 
         // Query all the tasks in state Done that belong to the selected project and are under the specified iteration node
         public static async Task<IEnumerable<WorkItem>> GetDoneTasks(WorkItemTrackingHttpClient workItemsClient,
-                                        IAddaDevOpsOrganization organization, IEnumerable<(Guid Id, string Name)> projects,
+                                        IEnumerable<(Guid Id, string Name)> projects,
                                         string iterationNode, ILogger log)
         {
             var workItemIds = new List<int>();
@@ -99,14 +119,14 @@ namespace ADDA.Functions
             {
                 try
                 {
-                    if (await AddaActivityGetProjects
+                    if (await AddaActivityGetAzureDevOpsProjects
                                 .ProjectHasIterationNode(workItemsClient, project.Id, iterationNode, depth) == false)
                     {
                         log.LogInformation($"Project {project} does not have iteration node {iterationNode}.");
                         continue;
                     }
 
-                    var iterationPaths = await AddaActivityGetProjects
+                    var iterationPaths = await AddaActivityGetAzureDevOpsProjects
                                 .GetAllIterationPathsForProjectEndingWithNode(workItemsClient, project.Id, iterationNode, depth);
 
                     foreach (var iterationPath in iterationPaths)
