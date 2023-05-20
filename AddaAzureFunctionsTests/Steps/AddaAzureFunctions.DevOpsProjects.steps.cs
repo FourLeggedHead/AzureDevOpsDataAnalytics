@@ -81,35 +81,45 @@ public class AddaAzureFunctionsDevOpsProjectsSteps
         // Get the list of DevOps projects from the scenario context
         var mockedProjectList = _scenarioContext.Get<PagedList<TeamProjectReference>>(MockedDevOpsProjects);
 
-        // Setup GetEntityIfExists to mock the first "mockedProjectList.Count - numberOfProjects" are in the mocked table
+        // Setup GetEntityIfExists to mock the first "numberOfProjects" are in the mocked table
         // Response must have a value, as an instance of DevOpsProject  
         var mockNullableResponseTrue = new Mock<Azure.NullableResponse<DevOpsProject>>();
         mockNullableResponseTrue.SetupGet(r => r.HasValue).Returns(true);
         mockNullableResponseTrue.SetupGet(r => r.Value)
-            .Returns(new Queue<DevOpsProject>(mockedProjectList.Take(mockedProjectList.Count - numberOfProjects)
+            .Returns(new Queue<DevOpsProject>(mockedProjectList.Take(numberOfProjects)
                                                                 .Select(p => new DevOpsProject(p))).Dequeue);
 
-        var inMockedProjects = mockedProjectList.Take(mockedProjectList.Count - numberOfProjects).Select(p => p.Id.ToString());
+        var inMockedProjects = mockedProjectList.Take(numberOfProjects).Select(p => p.Id.ToString());
         mockedTableClient.Setup(t => t.GetEntityIfExists<DevOpsProject>(DevOpsProject.DevOpsProjectPartitionKey,
                                         It.IsIn(inMockedProjects), default, default))
                             .Returns(mockNullableResponseTrue.Object);
 
-        // Seting up GetEntityIfExists to mock the last "numberOfProjects" are not in the mocked table
+        // Seting up GetEntityIfExists to mock the last "mockedProjectList.Count - numberOfProjects" are not in the mocked table
         var mockNullableResponseFalse = new Mock<Azure.NullableResponse<DevOpsProject>>();
         mockNullableResponseFalse.SetupGet(r => r.HasValue).Returns(false);
 
-        var notInMockedProjects = mockedProjectList.TakeLast(numberOfProjects).Select(p => p.Id.ToString());
+        var notInMockedProjects = mockedProjectList.TakeLast(mockedProjectList.Count - numberOfProjects).Select(p => p.Id.ToString());
         mockedTableClient.Setup(t => t.GetEntityIfExists<DevOpsProject>(DevOpsProject.DevOpsProjectPartitionKey,
                                         It.IsIn(notInMockedProjects), default, default))
                             .Returns(mockNullableResponseFalse.Object);
 
-        // We assume AddEntity works properly and retunns no error
+        // We assume AddEntity and UpdateEntity work properly and retunns no error
         var mockResponse = new Mock<Azure.Response>();
         mockResponse.SetupGet(r => r.IsError).Returns(false);
 
         mockedTableClient.Setup(t => t.AddEntity<DevOpsProject>(It.IsAny<DevOpsProject>(), default))
             .Returns(mockResponse.Object);
+        mockedTableClient.Setup(t => t.UpdateEntity<DevOpsProject>(It.IsAny<DevOpsProject>(), Azure.ETag.All, default, default))
+            .Returns(mockResponse.Object);
         _scenarioContext.Set<Mock<TableClient>>(mockedTableClient, MockedProjectsTableClient);
+    }
+
+    [Given(@"the (.*)th project in the list changed name")]
+    public void GivenTheProjectInTheListChangedName(int projectNumber)
+    {
+        var mockedProjectList = _scenarioContext.Get<PagedList<TeamProjectReference>>(MockedDevOpsProjects);
+        Assert.IsTrue(projectNumber <= mockedProjectList.Count);
+        mockedProjectList[projectNumber - 1].Name = "Changed name";
     }
 
     #endregion

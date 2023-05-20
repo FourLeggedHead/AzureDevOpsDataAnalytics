@@ -25,7 +25,7 @@ Feature: Azure DevOps Project
     Scenario: Update existing projects in the Azure Table
         Given a list of 4 Azure DevOps projects
         And an Azure table containing 4 of the projects
-        And one of the 4 projects changed name
+        And the 4th project in the list changed name
         When the projects are recorded in the Azure table
         Then the count of pojects added in the Azure table is 0
         And the count of projects updated in the Azure table is 1

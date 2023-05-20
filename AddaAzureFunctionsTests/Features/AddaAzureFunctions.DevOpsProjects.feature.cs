@@ -223,7 +223,7 @@ namespace AddaAzureFunctionsTests.Features
         testRunner.And("an Azure table containing 4 of the projects", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
 #line 28
-        testRunner.And("one of the 4 projects changed name", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
+        testRunner.And("the 4th project in the list changed name", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
 #line 29
         testRunner.When("the projects are recorded in the Azure table", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
