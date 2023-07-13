@@ -1,11 +1,10 @@
 global using Microsoft.VisualStudio.TestTools.UnitTesting;
 global using Microsoft.VisualStudio.Services.WebApi;
 global using Microsoft.TeamFoundation.Core.WebApi;
-global using Microsoft.TeamFoundation.Work.WebApi;
-global using Microsoft.TeamFoundation.Core.WebApi.Types;
 global using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 global using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 global using Azure.Data.Tables;
 global using TechTalk.SpecFlow;
 global using Moq;
 global using ADDA.Common;
+global using ADDA.Common.Helper;

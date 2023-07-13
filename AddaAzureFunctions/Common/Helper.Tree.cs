@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Helper
+namespace ADDA.Common.Helper
 {
     public static class Tree
     {

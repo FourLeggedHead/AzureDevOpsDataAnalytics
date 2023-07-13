@@ -10,20 +10,23 @@ namespace ADDA.Common
 
         [JsonProperty("name")]
         public string Name { get; set; }
+
+        [JsonProperty("id")]
+        public string Id { get; set; }
     }
 
-    public class PaginatedProjectsResponse
+    public class JiraPaginatedResponse<T>
     {
         [JsonProperty("nextPage")]
         public string NextPage { get; set; }
 
         [JsonProperty("total")]
-        public int TotalProjects { get; set; }
+        public int TotalItems { get; set; }
 
         [JsonProperty("isLast")]
         public bool IsLast { get; set; }
         
         [JsonProperty("values")]
-        public List<JiraProject> Projects { get; set; }
+        public List<T> Items { get; set; }
     }
 }

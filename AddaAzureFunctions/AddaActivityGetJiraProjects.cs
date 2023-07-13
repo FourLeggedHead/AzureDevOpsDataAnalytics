@@ -54,24 +54,24 @@ namespace ADDA.Functions
                 }
 
                 var responseContent = await response.Content.ReadAsStringAsync();
-                var paginatedStringResponse = JsonConvert.DeserializeObject<PaginatedProjectsResponse>(responseContent);
+                var paginatedStringResponse = JsonConvert.DeserializeObject<JiraPaginatedResponse<JiraProject>>(responseContent);
 
-                if (paginatedStringResponse.Projects.Count == 0)
+                if (paginatedStringResponse.Items.Count == 0)
                 {
                     log.LogInformation($"No Jira projects found for project collection {projectCollection.Uri}.");
                     return false;
                 }
 
                 var jiraProject = new List<JiraProject>();
-                jiraProject.AddRange(paginatedStringResponse.Projects);
+                jiraProject.AddRange(paginatedStringResponse.Items);
 
                 while (!paginatedStringResponse.IsLast)
                 {
                     response = await client.GetAsync(paginatedStringResponse.NextPage);
                     responseContent = await response.Content.ReadAsStringAsync();
-                    paginatedStringResponse = JsonConvert.DeserializeObject<PaginatedProjectsResponse>(responseContent);
+                    paginatedStringResponse = JsonConvert.DeserializeObject<JiraPaginatedResponse<JiraProject>>(responseContent);
 
-                    jiraProject.AddRange(paginatedStringResponse.Projects);
+                    jiraProject.AddRange(paginatedStringResponse.Items);
                 }
             }
 

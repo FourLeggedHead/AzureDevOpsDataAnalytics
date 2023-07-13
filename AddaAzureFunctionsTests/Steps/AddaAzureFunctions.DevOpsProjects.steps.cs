@@ -63,16 +63,16 @@ public class AddaAzureFunctionsDevOpsProjectsSteps
         mockedTableClient.SetupGet(t => t.Name).Returns(MockedDevOpsProjectsTable);
 
         // This response is used when the table is empty: GetEntityIfExists returns false since the table is empty
-        var mockNullableResponse = new Mock<Azure.NullableResponse<DevOpsProject>>();
+        var mockNullableResponse = new Mock<Azure.NullableResponse<ProjectEntity>>();
         mockNullableResponse.SetupGet(r => r.HasValue).Returns(false);
-        mockedTableClient.Setup(t => t.GetEntityIfExists<DevOpsProject>(It.IsAny<string>(), It.IsAny<string>(), default, default))
+        mockedTableClient.Setup(t => t.GetEntityIfExists<ProjectEntity>(It.IsAny<string>(), It.IsAny<string>(), default, default))
             .Returns(mockNullableResponse.Object);
 
         // We assume AddEntity works properly and retunns no error
         var mockResponse = new Mock<Azure.Response>();
         mockResponse.SetupGet(r => r.IsError).Returns(false);
 
-        mockedTableClient.Setup(t => t.AddEntity<DevOpsProject>(It.IsAny<DevOpsProject>(), default))
+        mockedTableClient.Setup(t => t.AddEntity<ProjectEntity>(It.IsAny<ProjectEntity>(), default))
             .Returns(mockResponse.Object);
         _scenarioContext.Set<Mock<TableClient>>(mockedTableClient, MockedProjectsTableClient);
     }
@@ -88,24 +88,24 @@ public class AddaAzureFunctionsDevOpsProjectsSteps
         var mockedProjectList = _scenarioContext.Get<PagedList<TeamProjectReference>>(MockedDevOpsProjects);
 
         // Setup GetEntityIfExists to mock the first "numberOfProjects" are in the mocked table
-        // Response must have a value, as an instance of DevOpsProject  
-        var mockNullableResponseTrue = new Mock<Azure.NullableResponse<DevOpsProject>>();
+        // Response must have a value, as an instance of ProjectEntity  
+        var mockNullableResponseTrue = new Mock<Azure.NullableResponse<ProjectEntity>>();
         mockNullableResponseTrue.SetupGet(r => r.HasValue).Returns(true);
         mockNullableResponseTrue.SetupGet(r => r.Value)
-            .Returns(new Queue<DevOpsProject>(mockedProjectList.Take(numberOfProjects)
-                                                                .Select(p => new DevOpsProject(p))).Dequeue);
+            .Returns(new Queue<ProjectEntity>(mockedProjectList.Take(numberOfProjects)
+                                                                .Select(p => new ProjectEntity(p))).Dequeue);
 
         var inMockedProjects = mockedProjectList.Take(numberOfProjects).Select(p => p.Id.ToString());
-        mockedTableClient.Setup(t => t.GetEntityIfExists<DevOpsProject>(DevOpsProject.DevOpsProjectPartitionKey,
+        mockedTableClient.Setup(t => t.GetEntityIfExists<ProjectEntity>(ProjectEntity.DevOpsProjectPartitionKey,
                                         It.IsIn(inMockedProjects), default, default))
                             .Returns(mockNullableResponseTrue.Object);
 
         // Seting up GetEntityIfExists to mock the last "mockedProjectList.Count - numberOfProjects" are not in the mocked table
-        var mockNullableResponseFalse = new Mock<Azure.NullableResponse<DevOpsProject>>();
+        var mockNullableResponseFalse = new Mock<Azure.NullableResponse<ProjectEntity>>();
         mockNullableResponseFalse.SetupGet(r => r.HasValue).Returns(false);
 
         var notInMockedProjects = mockedProjectList.TakeLast(mockedProjectList.Count - numberOfProjects).Select(p => p.Id.ToString());
-        mockedTableClient.Setup(t => t.GetEntityIfExists<DevOpsProject>(DevOpsProject.DevOpsProjectPartitionKey,
+        mockedTableClient.Setup(t => t.GetEntityIfExists<ProjectEntity>(ProjectEntity.DevOpsProjectPartitionKey,
                                         It.IsIn(notInMockedProjects), default, default))
                             .Returns(mockNullableResponseFalse.Object);
 
@@ -113,9 +113,9 @@ public class AddaAzureFunctionsDevOpsProjectsSteps
         var mockResponse = new Mock<Azure.Response>();
         mockResponse.SetupGet(r => r.IsError).Returns(false);
 
-        mockedTableClient.Setup(t => t.AddEntity<DevOpsProject>(It.IsAny<DevOpsProject>(), default))
+        mockedTableClient.Setup(t => t.AddEntity<ProjectEntity>(It.IsAny<ProjectEntity>(), default))
             .Returns(mockResponse.Object);
-        mockedTableClient.Setup(t => t.UpdateEntity<DevOpsProject>(It.IsAny<DevOpsProject>(), Azure.ETag.All, default, default))
+        mockedTableClient.Setup(t => t.UpdateEntity<ProjectEntity>(It.IsAny<ProjectEntity>(), Azure.ETag.All, default, default))
             .Returns(mockResponse.Object);
         _scenarioContext.Set<Mock<TableClient>>(mockedTableClient, MockedProjectsTableClient);
     }
@@ -214,7 +214,9 @@ public class AddaAzureFunctionsDevOpsProjectsSteps
         var mockedTableClient = _scenarioContext.Get<Mock<TableClient>>(MockedProjectsTableClient);
         var mockedProjectList = _scenarioContext.Get<PagedList<TeamProjectReference>>(MockedDevOpsProjects);
 
-        var projectsCounts = AddaActivityGetAzureDevOpsProjects.AddUpdateProjectsToTable(mockedTableClient.Object, mockedProjectList);
+        var projectsCounts = AzureTable.AddUpdateProjectsToTable(mockedTableClient.Object,
+                            mockedProjectList.Select(p => new ProjectInformations() { Id = p.Id.ToString(), Name = p.Name }),
+                            ProjectEntity.DevOpsProjectPartitionKey);
         _scenarioContext.Set<(int added, int updated)>(projectsCounts, DevOpsProjectsCounts);
     }
 

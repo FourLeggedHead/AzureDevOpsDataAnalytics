@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
+using ADDA.Common.Helper;
 
 namespace ADDA.Functions
 {
@@ -64,8 +65,8 @@ namespace ADDA.Functions
             log.LogInformation($"Getting the list of work items for project collection {organization.Uri}.");
 
             // List the DevOps projects selected to get the work items from
-            var selectedProjects = tableClient.Query<DevOpsProject>(
-                                                p => p.PartitionKey == DevOpsProject.DevOpsProjectPartitionKey && p.Selected == true)
+            var selectedProjects = tableClient.Query<ProjectEntity>(
+                                                p => p.PartitionKey == ProjectEntity.DevOpsProjectPartitionKey && p.Selected == true)
                                                 .Select(p => (Id: Guid.Parse(p.RowKey), Name: p.Name)).ToList();
 
             // Terminates the function if no project is selected

@@ -11,8 +11,8 @@ using Microsoft.VisualStudio.Services.Common;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
-using Helper;
 using ADDA.Common;
+using ADDA.Common.Helper;
 
 namespace ADDA.Functions
 {
@@ -49,12 +49,24 @@ namespace ADDA.Functions
                 log.LogInformation($"{projects.Count} projects in the {organization.Uri.AbsoluteUri} organization.");
 
                 // Add or update the list of DevOps projects in the Azure table
-                var projectsCounts = AddUpdateProjectsToTable(tableClient, projects);
+                var projectsCounts = AzureTable.AddUpdateProjectsToTable(tableClient,
+                                                            projects.Select(p => new ProjectInformations()
+                                                                {
+                                                                    Id = p.Id.ToString(),
+                                                                    Name = p.Name
+                                                                }),
+                                                            ProjectEntity.DevOpsProjectPartitionKey);
                 log.LogInformation($"{projectsCounts.added} {(projectsCounts.added > 1 ? "projects" : "project")} were added.");
                 log.LogInformation($"{projectsCounts.updated} {(projectsCounts.updated > 1 ? "projects" : "project")} were updated.");
 
                 // Delete (soft) projects from the table when they no longer exist in DevOps and unselect them
-                var deletedProjectCount = SoftDeleteProjectsFromTable(tableClient, projects);
+                var deletedProjectCount = AzureTable.SoftDeleteProjectsFromTable(tableClient,
+                                                            projects.Select(p => new ProjectInformations()
+                                                                {
+                                                                    Id = p.Id.ToString(),
+                                                                    Name = p.Name
+                                                                }),
+                                                            ProjectEntity.DevOpsProjectPartitionKey);
                 log.LogInformation($"{deletedProjectCount} {(deletedProjectCount > 1 ? "projects" : "project")} were deleted.");
 
                 return true;
@@ -189,68 +201,5 @@ namespace ADDA.Functions
         }
 
         #endregion
-
-        // Add or update the list of DevOps projects in the Azure table
-        public static (int added, int updated) AddUpdateProjectsToTable(TableClient tableClient, IPagedList<TeamProjectReference> projects)
-        {
-            (int added, int updated) projectsCounts = (0, 0);
-
-            foreach (var project in projects)
-            {
-                var response = tableClient.GetEntityIfExists<DevOpsProject>(DevOpsProject.DevOpsProjectPartitionKey, project.Id.ToString());
-
-                if (!response.HasValue)
-                {
-                    var entity = new DevOpsProject()
-                    {
-                        Name = project.Name,
-                        Selected = false,
-                        Deleted = false,
-                        PartitionKey = DevOpsProject.DevOpsProjectPartitionKey,
-                        RowKey = project.Id.ToString()
-                    };
-                    var addedResponse = tableClient.AddEntity<DevOpsProject>(entity);
-
-                    if (!addedResponse.IsError) projectsCounts.added++;
-                }
-                else
-                {
-                    if (!response.Value.Name.Equals(project.Name))
-                    {
-                        response.Value.Name = project.Name;
-                        var updatedResponse = tableClient.UpdateEntity<DevOpsProject>(response.Value, Azure.ETag.All);
-
-                        if (!updatedResponse.IsError) projectsCounts.updated++;
-                    }
-                }
-            }
-
-            return projectsCounts;
-        }
-
-        // Delete (soft) projects from the table when they no longer exist in DevOps and unselect them
-        public static int SoftDeleteProjectsFromTable(TableClient tableClient, IPagedList<TeamProjectReference> projects)
-        {
-            var projectEntityRowKeys = tableClient.Query<DevOpsProject>(
-                                                e => e.PartitionKey == DevOpsProject.DevOpsProjectPartitionKey, 20, new[] { "RowKey" });
-
-            var deletedProjectsCount = 0;
-
-            foreach (var projectEntityRowKey in projectEntityRowKeys)
-            {
-                if (!projects.Any(p => p.Id.ToString() == projectEntityRowKey.RowKey))
-                {
-                    var projectEntity = tableClient.GetEntity<DevOpsProject>(DevOpsProject.DevOpsProjectPartitionKey, projectEntityRowKey.RowKey);
-
-                    projectEntity.Value.Deleted = true;
-                    projectEntity.Value.Selected = false;
-                    var deletedResponse = tableClient.UpdateEntity<DevOpsProject>(projectEntity, Azure.ETag.All);
-
-                    if (!deletedResponse.IsError) deletedProjectsCount++;
-                }
-            }
-
-            return deletedProjectsCount;
-        }
     }
 }
