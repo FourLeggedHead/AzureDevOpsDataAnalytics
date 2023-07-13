@@ -31,3 +31,12 @@ resource "azurerm_storage_table" "bactool_projects_table" {
   name                 = "DevOpsProjects"
   storage_account_name = azurerm_storage_account.bactool_data_sa.name
 }
+
+# Creates application insights
+resource "azurerm_application_insights" "bactool_app_insights" {
+  name                = "adda-${lower(var.env)}-ai"
+  resource_group_name = azurerm_resource_group.bactool_rg.name
+  location            = azurerm_resource_group.bactool_rg.location
+  application_type    = "other"
+  tags                = local.tags
+}
