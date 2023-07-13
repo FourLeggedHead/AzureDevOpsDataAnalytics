@@ -94,10 +94,8 @@ public class AddaAzureFunctionsDevOpsProjectsSteps
         mockNullableResponseTrue.SetupGet(r => r.HasValue).Returns(true);
         mockNullableResponseTrue.SetupGet(r => r.Value)
             .Returns(new Queue<DevOpsProject>(mockedProjectList.Take(numberOfProjects)
-            .Returns(new Queue<DevOpsProject>(mockedProjectList.Take(numberOfProjects)
                                                                 .Select(p => new DevOpsProject(p))).Dequeue);
 
-        var inMockedProjects = mockedProjectList.Take(numberOfProjects).Select(p => p.Id.ToString());
         var inMockedProjects = mockedProjectList.Take(numberOfProjects).Select(p => p.Id.ToString());
         mockedTableClient.Setup(t => t.GetEntityIfExists<DevOpsProject>(DevOpsProject.DevOpsProjectPartitionKey,
                                         It.IsIn(inMockedProjects), default, default))
@@ -108,7 +106,6 @@ public class AddaAzureFunctionsDevOpsProjectsSteps
         var mockNullableResponseFalse = new Mock<Azure.NullableResponse<DevOpsProject>>();
         mockNullableResponseFalse.SetupGet(r => r.HasValue).Returns(false);
 
-        var notInMockedProjects = mockedProjectList.TakeLast(mockedProjectList.Count - numberOfProjects).Select(p => p.Id.ToString());
         var notInMockedProjects = mockedProjectList.TakeLast(mockedProjectList.Count - numberOfProjects).Select(p => p.Id.ToString());
         mockedTableClient.Setup(t => t.GetEntityIfExists<DevOpsProject>(DevOpsProject.DevOpsProjectPartitionKey,
                                         It.IsIn(notInMockedProjects), default, default))
